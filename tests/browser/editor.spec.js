@@ -68,3 +68,9 @@ test('quarter-turn image rotation preserves center and exports to project and SV
  const pending=page.waitForEvent('download');await page.locator('#save-project').click();const d=await pending,file=testInfo.outputPath('rotated.json');await d.saveAs(file);const saved=JSON.parse(await readFile(file,'utf8'));expect(saved.state.imageRotation).toBe(90);
  await page.locator('[data-rotation="0"]').click();await page.locator('#project-file').setInputFiles(file);await expect(page.locator('[data-rotation="90"]')).toHaveAttribute('aria-pressed','true');await page.locator('#export-png').click();await page.locator('#export-format').selectOption('svg');await expect(page.locator('#download-export')).toBeEnabled();const sv=page.waitForEvent('download');await page.locator('#download-export').click();const sd=await sv,sf=testInfo.outputPath('rotated.svg');await sd.saveAs(sf);expect(await readFile(sf,'utf8')).toContain('transform="rotate(90 ');
 });
+test('capture material, pin-group and export controls for the README',async({page},testInfo)=>{
+ await ready(page);const canvas=await page.locator('#preview').boundingBox(),scale=canvas.width/2480;
+ await page.mouse.click(canvas.x+1240*scale,canvas.y+1754*scale);await expect(page.locator('#selection-box')).toBeVisible();await page.screenshot({path:testInfo.outputPath('material-controls.png')});
+ await page.getByRole('button',{name:'引脚配置',exact:true}).click();await expect(page.locator('#selection-name')).toHaveText('左侧');await page.screenshot({path:testInfo.outputPath('pin-group-controls.png')});
+ await page.locator('#export-png').click();await page.locator('#export-format').selectOption('jpg');await page.locator('#export-scale').selectOption('0.5');await expect(page.locator('#download-export')).toBeEnabled();await expect.poll(()=>page.locator('#export-preview').evaluate(i=>i.naturalWidth)).toBe(1240);await page.locator('#export-dialog').screenshot({path:testInfo.outputPath('export-settings.png')});
+});
