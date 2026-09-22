@@ -1,0 +1,68 @@
+name: Test and publish GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    tags: ['**']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || 'pages-production' }}
+  queue: max
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Validate editor and exports
+    if: github.event.deleted != true
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: Upload browser checks
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-checks
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 14
+      - name: Package static site
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  publish:
+    name: Publish OpenPinMap
+    needs: verify
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v6
+      - uses: actions/deploy-pages@v5
+        id: pages

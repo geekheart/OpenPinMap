@@ -1,0 +1,301 @@
+{
+  "name": "WT9932S31-TINY",
+  "width": 3376,
+  "height": 5000,
+  "background": "transparent",
+  "fontSize": 70,
+  "fontFamily": "Arial",
+  "radius": 100,
+  "guides": false,
+  "imageX": 870,
+  "imageY": 945,
+  "imageScale": 100,
+  "imageName": "S31-TINY 正面透明底.png",
+  "groups": [
+    {
+      "connector": "H1",
+      "start": [
+        554,
+        967.546129032258
+      ],
+      "gap": 146.60851612903227,
+      "pins": [
+        {
+          "name": "GND",
+          "color": "#2ecc71",
+          "_pin": 1,
+          "_net": "GND"
+        },
+        {
+          "name": "IO2",
+          "color": "#3498db",
+          "_pin": 2,
+          "_net": "IO2"
+        },
+        {
+          "name": "IO3",
+          "color": "#3498db",
+          "_pin": 3,
+          "_net": "IO3"
+        },
+        {
+          "name": "IO4",
+          "color": "#3498db",
+          "_pin": 4,
+          "_net": "IO4"
+        },
+        {
+          "name": "IO5",
+          "color": "#3498db",
+          "_pin": 5,
+          "_net": "IO5"
+        },
+        {
+          "name": "IO6",
+          "color": "#3498db",
+          "_pin": 6,
+          "_net": "IO6"
+        },
+        {
+          "name": "IO7",
+          "color": "#3498db",
+          "_pin": 7,
+          "_net": "IO7"
+        },
+        {
+          "name": "IO8",
+          "color": "#3498db",
+          "_pin": 8,
+          "_net": "IO8"
+        },
+        {
+          "name": "IO9",
+          "color": "#3498db",
+          "_pin": 9,
+          "_net": "IO9"
+        },
+        {
+          "name": "IO10",
+          "color": "#3498db",
+          "_pin": 10,
+          "_net": "IO10"
+        },
+        {
+          "name": "IO11",
+          "color": "#3498db",
+          "_pin": 11,
+          "_net": "IO11"
+        },
+        {
+          "name": "IO12",
+          "color": "#3498db",
+          "_pin": 12,
+          "_net": "IO12"
+        },
+        {
+          "name": "IO13",
+          "color": "#3498db",
+          "_pin": 13,
+          "_net": "IO13"
+        },
+        {
+          "name": "IO14",
+          "color": "#3498db",
+          "_pin": 14,
+          "_net": "IO14"
+        },
+        {
+          "name": "IO15",
+          "color": "#3498db",
+          "_pin": 15,
+          "_net": "IO15"
+        },
+        {
+          "name": "IO16",
+          "color": "#3498db",
+          "_pin": 16,
+          "_net": "IO16"
+        },
+        {
+          "name": "IO17",
+          "color": "#3498db",
+          "_pin": 17,
+          "_net": "IO17"
+        },
+        {
+          "name": "3.3V",
+          "color": "#e74c3c",
+          "_pin": 18,
+          "_net": "3.3V"
+        },
+        {
+          "name": "IO18",
+          "color": "#3498db",
+          "_pin": 19,
+          "_net": "IO18"
+        },
+        {
+          "name": "5V",
+          "color": "#e74c3c",
+          "_pin": 20,
+          "_net": "5V"
+        },
+        {
+          "name": "GND",
+          "color": "#2ecc71",
+          "_pin": 21,
+          "_net": "GND"
+        }
+      ]
+    },
+    {
+      "connector": "H2",
+      "start": [
+        2525,
+        983.2983870967741
+      ],
+      "gap": 146.2709677419355,
+      "pins": [
+        {
+          "name": "GND",
+          "color": "#2ecc71",
+          "_pin": 21,
+          "_net": "GND"
+        },
+        {
+          "name": "IO58",
+          "color": "#3498db",
+          "_pin": 20,
+          "_net": "TX0",
+          "_alias": "IO58 / TX0"
+        },
+        {
+          "name": "IO59",
+          "color": "#3498db",
+          "_pin": 19,
+          "_net": "RX0",
+          "_alias": "IO59 / RX0"
+        },
+        {
+          "name": "IO60",
+          "color": "#3498db",
+          "_pin": 18,
+          "_net": "IO60"
+        },
+        {
+          "name": "IO45",
+          "color": "#3498db",
+          "_pin": 17,
+          "_net": "IO45"
+        },
+        {
+          "name": "IO44",
+          "color": "#3498db",
+          "_pin": 16,
+          "_net": "IO44"
+        },
+        {
+          "name": "IO43",
+          "color": "#3498db",
+          "_pin": 15,
+          "_net": "IO43"
+        },
+        {
+          "name": "IO42",
+          "color": "#3498db",
+          "_pin": 14,
+          "_net": "IO42"
+        },
+        {
+          "name": "IO40",
+          "color": "#3498db",
+          "_pin": 13,
+          "_net": "IO40"
+        },
+        {
+          "name": "IO39",
+          "color": "#3498db",
+          "_pin": 12,
+          "_net": "IO39"
+        },
+        {
+          "name": "IO38",
+          "color": "#3498db",
+          "_pin": 11,
+          "_net": "IO38"
+        },
+        {
+          "name": "IO37",
+          "color": "#3498db",
+          "_pin": 10,
+          "_net": "IO37"
+        },
+        {
+          "name": "IO36",
+          "color": "#3498db",
+          "_pin": 9,
+          "_net": "IO36"
+        },
+        {
+          "name": "IO35",
+          "color": "#3498db",
+          "_pin": 8,
+          "_net": "IO35"
+        },
+        {
+          "name": "IO21",
+          "color": "#3498db",
+          "_pin": 7,
+          "_net": "SD_D1",
+          "_alias": "IO21 / SD_D1"
+        },
+        {
+          "name": "IO20",
+          "color": "#3498db",
+          "_pin": 6,
+          "_net": "SD_D0",
+          "_alias": "IO20 / SD_D0"
+        },
+        {
+          "name": "IO24",
+          "color": "#3498db",
+          "_pin": 5,
+          "_net": "SD_CLK",
+          "_alias": "IO24 / SD_CLK"
+        },
+        {
+          "name": "IO25",
+          "color": "#3498db",
+          "_pin": 4,
+          "_net": "SD_CMD",
+          "_alias": "IO25 / SD_CMD"
+        },
+        {
+          "name": "IO23",
+          "color": "#3498db",
+          "_pin": 3,
+          "_net": "SD_D3",
+          "_alias": "IO23 / SD_D3"
+        },
+        {
+          "name": "IO22",
+          "color": "#3498db",
+          "_pin": 2,
+          "_net": "SD_D2",
+          "_alias": "IO22 / SD_D2"
+        },
+        {
+          "name": "GND",
+          "color": "#2ecc71",
+          "_pin": 1,
+          "_net": "GND"
+        }
+      ]
+    }
+  ],
+  "palette": {
+    "gpio": "#3498db",
+    "power": "#e74c3c",
+    "ground": "#2ecc71"
+  }
+}

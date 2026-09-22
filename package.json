@@ -1,0 +1,16 @@
+{
+  "name": "openpinmap",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "浏览器里的开发板引脚图编辑器",
+  "scripts": {
+    "dev": "node scripts/build.mjs && node scripts/serve.mjs",
+    "build": "node scripts/build.mjs",
+    "preview": "node scripts/serve.mjs",
+    "test": "node --check app.js && node --check src/model.js && node --test tests/*.test.mjs",
+    "test:e2e": "playwright test"
+  },
+  "engines": { "node": ">=24" },
+  "devDependencies": { "@playwright/test": "1.63.0" }
+}
