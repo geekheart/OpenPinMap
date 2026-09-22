@@ -10,10 +10,12 @@
     &nbsp; · &nbsp;
     <a href="docs/deployment.md">部署指南</a>
     &nbsp; · &nbsp;
-    <a href="https://geekheart.github.io/OpenPinMap/OpenPinMap.html" download>离线单文件</a>
+    <a href="https://github.com/geekheart/OpenPinMap/releases/latest/download/OpenPinMap.html" download>离线单文件</a>
   </p>
   <p><code>实时预览</code> &nbsp; <code>透明 PNG</code> &nbsp; <code>JSON 配置</code> &nbsp; <code>纯前端</code></p>
 </div>
+
+![OpenPinMap 工作台](docs/images/overview.png)
 
 上传开发板的正面产品图，设置两侧引脚名称、颜色与间距，拖动标签对齐焊孔，再导出可用于手册或产品页的引脚图。
 
