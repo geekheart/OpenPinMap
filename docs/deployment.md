@@ -24,8 +24,8 @@ npm run build
 npx playwright install chromium
 npm run test:e2e
 
-git tag v1.0.1
-git push origin v1.0.1
+git tag -a v1.1.1 -m "OpenPinMap v1.1.1"
+git push origin main v1.1.1
 gh run list --workflow pages.yml
 gh run watch <run-id> --exit-status
 ```
