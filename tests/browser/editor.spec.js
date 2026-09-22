@@ -2,8 +2,8 @@ import {test,expect} from '@playwright/test';
 import {readFile} from 'node:fs/promises';
 import path from 'node:path';
 const root=process.cwd();
-async function ready(page){await page.goto('./');await expect(page.locator('#source-thumbnail')).toHaveAttribute('src',/^data:image/);await expect(page.locator('#preview')).toHaveJSProperty('width',expect.any(Number));await expect(page.locator('#save-state')).toHaveText('已在本机自动保存');}
-test('edit, undo/redo, preserve custom palette and restore project',async({page},testInfo)=>{
+async function ready(page){await page.goto('./');await expect(page.locator('#source-thumbnail')).toHaveAttribute('src',/^data:image/);await expect.poll(()=>page.locator('#preview').evaluate(c=>c.width)).toBeGreaterThan(1);await expect(page.locator('#save-state')).toHaveText('已在本机自动保存');}
+test('edit, undo/redo and restore complete project',async({page},testInfo)=>{
  await ready(page);await page.getByRole('button',{name:'引脚配置',exact:true}).click();
  const input=page.getByRole('textbox',{name:'第 2 针名称',exact:true});await input.fill('IO2_TEST');await input.press('Tab');
  await expect(page.getByRole('button',{name:'撤销',exact:true})).toBeEnabled();await page.getByRole('button',{name:'撤销',exact:true}).click();await expect(input).toHaveValue('IO2');
