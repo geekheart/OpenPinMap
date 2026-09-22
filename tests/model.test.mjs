@@ -22,7 +22,7 @@ test('invalid import does not modify the supplied document',()=>{
  const p=project();p.state.groups[0].pins[0].color='red';const before=JSON.stringify(p);assert.throws(()=>validateProject(p),/#RRGGBB/);assert.equal(JSON.stringify(p),before);
 });
 test('reject null documents and unsupported versions or remote image URLs',()=>{
- for(const p of [null,{}, {...project(),version:2}, {...project(),format:'unknown'}])assert.throws(()=>validateProject(p));
+ for(const p of [null,{}, {...project(),version:99}, {...project(),format:'unknown'}])assert.throws(()=>validateProject(p));
  const p=project();p.state.imageData='https://example.com/image.png';assert.throws(()=>validateProject(p),/图片/);
 });
 test('reject malformed groups, non-finite coordinates and bad colors',()=>{
@@ -34,3 +34,12 @@ test('enforce group, pin and pixel budgets',()=>{
  const p=project();p.state.width=8000;p.state.height=8000;assert.throws(()=>validateProject(p),/3200/);
 });
 test('plain label text is retained without HTML interpretation',()=>{const g=structuredClone(source.groups);g[0].pins[0].name='<img src=x onerror=alert(1)>';assert.equal(validateGroups(g)[0].pins[0].name,'<img src=x onerror=alert(1)>');});
+
+test('v2 A4, image and group transforms, export options survive JSON round-trip',()=>{
+ const p=project();p.version=2;p.state.paper={format:'a4',orientation:'landscape',dpi:300};p.state.imageScale=321.25;p.state.imageRotation=270;p.state.imageX=91.5;p.state.groups[0].scale=1.75;p.state.groups[0].gap=183.25;p.state.groups[0].start=[120.25,342.75];p.state.exportSettings={format:'jpg',scale:.5,quality:63,optimizeSvg:false,smoothing:false};
+ const s=validateProject(JSON.parse(JSON.stringify(p)));assert.deepEqual([s.width,s.height],[3508,2480]);assert.equal(s.imageScale,321.25);assert.equal(s.imageRotation,270);assert.equal(s.imageX,91.5);assert.equal(s.groups[0].scale,1.75);assert.deepEqual(s.groups[0].start,[120.25,342.75]);assert.equal(s.groups[0].gap,183.25);assert.deepEqual(s.exportSettings,p.state.exportSettings);
+});
+test('v1 projects keep custom dimensions and default group scale',()=>{const s=validateProject(project());assert.equal(s.paper.format,'custom');assert.equal(s.groups[0].scale,1);assert.deepEqual([s.width,s.height],[source.width,source.height]);});
+test('P4 default is transparent A4 with unchanged 27 pins on each side',()=>{const s=JSON.parse(readFileSync(new URL('../examples/p4.json',import.meta.url)));assert.equal(s.paper.format,'a4');assert.deepEqual([s.width,s.height],[2480,3508]);assert.equal(s.background,'transparent');assert.deepEqual(s.groups.map(g=>g.pins.length),[27,27]);assert.equal(s.groups[0].pins[0].name,'IO16');assert.equal(s.groups[1].pins[26].name,'GND');assert.equal(s.groups[0].pins[23].name,'VO4');});
+
+test('rotation accepts quarter turns and defaults older projects to zero',()=>{for(const angle of [0,90,180,270]){const p=project();p.state.imageRotation=angle;assert.equal(validateProject(p).imageRotation,angle);}const p=project();p.state.imageRotation=45;assert.equal(validateProject(p).imageRotation,0);});

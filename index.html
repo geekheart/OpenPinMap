@@ -1,33 +1,35 @@
 <!doctype html>
 <html lang="zh-CN">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f6f8fa"><title>OpenPinMap · 引脚图工作台</title><meta name="description" content="在线编辑开发板引脚图，实时预览、透明 PNG 导出与 JSON 配置保存。"><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css"></head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f6f8fa"><title>OpenPinMap · 引脚图工作台</title><meta name="description" content="在线编辑开发板引脚图，A4 画布、拖拽缩放、PNG / SVG / JPG 导出与 JSON 配置保存。"><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css"></head>
 <body>
 <header class="app-header">
  <a class="brand" href="#" aria-label="OpenPinMap"><span class="brand-mark"><i></i><i></i><i></i></span><span>Open<span class="brand-light">PinMap</span><small>引脚图工作台</small></span></a>
- <div class="header-actions"><button id="import-project" class="button">打开项目</button><button id="save-project" class="button">保存项目</button><button id="export-png" class="button primary"><span>↓</span> 导出 PNG</button></div>
+ <div class="header-actions"><button id="import-project" class="button">打开项目</button><button id="save-project" class="button">保存项目</button><button id="export-png" class="button primary"><span>↓</span> 导出图片</button></div>
 </header>
-<div class="workspace-bar"><div class="document-title"><span class="file-icon">▧</span><input id="project-name" aria-label="项目名称" value="WT9932S31-TINY"><span class="badge">PINOUT</span></div><div class="document-meta"><span id="pin-total">42 个引脚</span><span class="separator">/</span><span id="output-size">3376 × 5000 px</span><span class="saved-state" id="save-state">已载入 S31 示例</span></div></div>
+<div class="workspace-bar"><div class="document-title"><span class="file-icon">▧</span><input id="project-name" aria-label="项目名称" value="WT9932P4-TINY"><span class="badge">PINOUT</span></div><div class="document-meta"><span id="pin-total">54 个引脚</span><span class="separator">/</span><span id="output-size">A4 · 2480 × 3508 px</span><span class="saved-state" id="save-state">已载入 P4 示例</span></div></div>
 <main class="workspace">
  <aside class="sidebar">
   <nav class="tabs" aria-label="编辑面板"><button class="tab active" data-tab="material">素材与画布</button><button class="tab" data-tab="pins">引脚配置</button><button class="tab" data-tab="style">标签样式</button></nav>
   <div class="panel active" id="panel-material">
    <section><div class="section-heading"><h2>产品素材</h2></div>
-    <button class="upload-card" id="upload-image"><div class="image-thumbnail checker"><img id="source-thumbnail" alt="当前产品素材"></div><span><strong id="source-name">S31-TINY 正面透明底.png</strong><small>更换图片</small><span class="tag" id="alpha-tag">PNG · 透明背景</span></span><span class="upload-arrow">↥</span></button>
+    <button class="upload-card" id="upload-image"><div class="image-thumbnail checker"><img id="source-thumbnail" alt="当前产品素材"></div><span><strong id="source-name">WT9932P4-TINY 透明底.webp</strong><small>更换图片</small><span class="tag" id="alpha-tag">PNG · 透明背景</span></span><span class="upload-arrow">↥</span></button>
     
     <div class="button-row"><button class="button small" id="crop-image">裁去透明边缘</button><button class="button small" id="center-image">居中素材</button></div>
-    <div class="field-row"><label>水平位置 X<input id="image-x" type="number" data-state="imageX"></label><label>垂直位置 Y<input id="image-y" type="number" data-state="imageY"></label></div>
-    <label class="range-label"><span>素材缩放 <output id="image-scale-value">100%</output></span><input id="image-scale" type="range" min="5" max="250" step="1" data-state="imageScale"></label>
+    <label class="field-label">素材旋转</label><div class="segmented" aria-label="素材旋转"><button data-rotation="0">0°</button><button data-rotation="90">90°</button><button data-rotation="180">180°</button><button data-rotation="270">270°</button></div><div class="field-row"><label>水平位置 X<input id="image-x" type="number" data-state="imageX"></label><label>垂直位置 Y<input id="image-y" type="number" data-state="imageY"></label></div>
+    <label class="range-label"><span>素材缩放 <output id="image-scale-value">100%</output></span><input id="image-scale" type="range" min="1" max="500" step="0.1" data-state="imageScale"></label>
    </section>
-   <section><div class="section-heading"><h2>画布设置</h2></div><div class="field-row"><label>宽度 <span>px</span><input id="canvas-width" type="number" min="200" max="8000" data-state="width"></label><label>高度 <span>px</span><input id="canvas-height" type="number" min="200" max="8000" data-state="height"></label></div>
+   <section><div class="section-heading"><h2>画布设置</h2></div><label>纸张<select id="paper-size"><option value="portrait">A4 · 纵向 · 210 × 297 mm</option><option value="landscape">A4 · 横向 · 297 × 210 mm</option><option value="custom">自定义</option></select></label><div class="field-row"><label>宽度 <span>px</span><input id="canvas-width" type="number" min="200" max="8000" data-state="width"></label><label>高度 <span>px</span><input id="canvas-height" type="number" min="200" max="8000" data-state="height"></label></div>
     <label class="field-label">导出背景</label><div class="segmented"><button class="selected" data-bg="transparent"><span class="tiny-checker"></span>透明</button><button data-bg="white"><span class="tiny-white"></span>白色</button><button data-bg="dark"><span class="tiny-dark"></span>深色</button></div>
     
    </section>
-   <section><div class="section-heading"><h2>示例</h2></div><button id="load-example" class="example-card"><span class="example-icon">S31</span><span><strong>WT9932S31-TINY</strong><small>42 针 · HDK 2026-09-20</small></span><span>↗</span></button></section>
+   <section><div class="section-heading"><h2>示例</h2></div><button id="load-example" class="example-card"><span class="example-icon">P4</span><span><strong>WT9932P4-TINY</strong><small>54 针 · 透明底素材</small></span><span>↗</span></button></section>
   </div>
   <div class="panel" id="panel-pins">
    <section><div class="section-heading"><h2>引脚分组</h2><button class="text-button" id="add-group">＋ 添加</button></div><div id="group-tabs" class="group-tabs"></div>
     <div class="field-row group-name-row"><label>分组名称<input id="group-name" type="text" maxlength="32"></label><button id="delete-group" class="button small danger" title="删除当前分组">删除组</button></div>
     <div class="field-row"><label>起点 X<input id="group-x" type="number" step="1"></label><label>起点 Y<input id="group-y" type="number" step="1"></label><label>针脚间距<input id="group-gap" type="number" min="1" max="2000" step="0.1"></label></div>
+    <label class="range-label"><span>整组缩放 <output id="group-scale-value">100%</output></span><input id="group-scale" type="range" min="10" max="500" step="1"></label>
+    <label class="field-label">对齐到</label><div class="alignment-row"><select id="align-target" aria-label="对齐目标"><option value="image">产品素材</option><option value="canvas">画布</option><option value="previous">另一组 PIN</option></select><button class="button small" id="align-top">顶端</button><button class="button small" id="align-center">居中</button><button class="button small" id="align-bottom">底端</button></div>
     <div class="pin-list-heading"><span>名称与颜色</span><button class="text-button" id="reverse-pins">反转顺序 ↕</button></div>
     <div id="pin-list" class="pin-list"></div><button id="add-pin" class="button full-width">＋ 添加引脚</button>
     <details class="batch-editor"><summary>批量编辑名称</summary><textarea id="batch-pins" rows="10" spellcheck="false" aria-label="批量引脚名称"></textarea><button id="apply-batch" class="button small">应用名称</button></details>
@@ -42,11 +44,23 @@
  </aside>
  <section class="preview-area" aria-label="引脚图实时预览">
   <div class="preview-toolbar"><div class="preview-label"><span class="live-dot"></span>实时预览<span class="subtle" id="preview-background">透明画布</span></div><div class="preview-tools"><button class="icon-button" id="undo" title="撤销 (Ctrl/⌘ Z)" aria-label="撤销">↶</button><button class="icon-button" id="redo" title="重做" aria-label="重做">↷</button><span class="tool-divider"></span><button class="button small" id="fit">适应画布</button><button class="button small" id="actual">100%</button></div></div>
-  <div id="viewport" class="viewport"><div id="canvas-wrap" class="canvas-wrap checker"><canvas id="preview" aria-label="引脚图画布"></canvas></div><div id="drop-overlay" class="drop-overlay"><strong>释放图片，开始标注</strong><span>PNG · JPEG · WebP</span></div></div>
-  <div class="preview-bottom"><div></div><div class="zoom-controls"><button id="zoom-out" class="icon-button" aria-label="缩小">−</button><span id="zoom-value">25%</span><button id="zoom-in" class="icon-button" aria-label="放大">＋</button></div></div>
+  <div id="viewport" class="viewport"><div id="canvas-wrap" class="canvas-wrap checker"><canvas id="preview" aria-label="引脚图画布"></canvas><div id="selection-box" class="selection-box" hidden><span id="selection-name"></span><button data-handle="nw" aria-label="左上角缩放"></button><button data-handle="ne" aria-label="右上角缩放"></button><button data-handle="sw" aria-label="左下角缩放"></button><button data-handle="se" aria-label="右下角缩放"></button><button data-handle="n" aria-label="调整顶部间距"></button><button data-handle="s" aria-label="调整底部间距"></button></div></div><div id="drop-overlay" class="drop-overlay"><strong>释放图片，开始标注</strong><span>PNG · JPEG · WebP</span></div></div>
+  <div class="preview-bottom"><label class="snap-option"><input id="snap" type="checkbox" checked>对齐吸附</label><div class="zoom-controls"><button id="zoom-out" class="icon-button" aria-label="缩小">−</button><span id="zoom-value">25%</span><button id="zoom-in" class="icon-button" aria-label="放大">＋</button></div></div>
  </section>
 </main>
+<dialog id="export-dialog" aria-labelledby="export-title">
+ <div class="dialog-heading"><h2 id="export-title">导出图片</h2><button id="close-export" class="icon-button" aria-label="关闭导出">×</button></div>
+ <div class="export-body"><div class="export-preview checker"><img id="export-preview" alt="导出预览"></div><div class="export-controls">
+ <label>文件格式<select id="export-format"><option value="png">PNG</option><option value="svg">SVG</option><option value="jpg">JPG</option></select></label>
+ <label><span id="export-scale-label">输出尺寸</span><select id="export-scale"><option value="0.25">25%</option><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.5">150%</option><option value="2">200%</option></select></label>
+ <label class="toggle-row" id="svg-optimize-row"><span>压缩内嵌素材</span><input id="export-optimize" type="checkbox"></label>
+ <label class="range-label" id="quality-row"><span><span id="quality-label">图片质量</span><output id="export-quality-value">90%</output></span><input id="export-quality" type="range" min="10" max="100" step="1"></label>
+ <label class="toggle-row"><span>平滑缩放</span><input id="export-smoothing" type="checkbox"></label>
+ <p id="export-info" class="export-info" role="status"></p><p id="export-error" class="export-error" role="alert"></p>
+ </div></div>
+ <div class="dialog-footer"><span id="export-filename"></span><button id="save-as" class="button">另存为…</button><button id="download-export" class="button primary">下载文件</button></div>
+</dialog>
 <div id="toast" class="toast" role="status"></div>
 <input id="image-file" type="file" accept="image/png,image/jpeg,image/webp" hidden><input id="project-file" type="file" accept=".json,application/json" hidden><input id="config-file" type="file" accept=".json,application/json" hidden>
-<script src="defaults.js"></script><script src="src/model.js"></script><script src="app.js"></script>
+<script src="defaults.js"></script><script src="src/model.js"></script><script src="src/export.js"></script><script src="app.js"></script>
 </body></html>

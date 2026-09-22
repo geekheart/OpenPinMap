@@ -1,0 +1,272 @@
+{
+  "name": "WT9932P4-TINY",
+  "width": 2480,
+  "height": 3508,
+  "paper": {
+    "format": "a4",
+    "orientation": "portrait",
+    "dpi": 300
+  },
+  "background": "transparent",
+  "fontSize": 70,
+  "fontFamily": "Arial",
+  "radius": 100,
+  "guides": false,
+  "imageX": 674.4,
+  "imageY": 342.45,
+  "imageScale": 70,
+  "imageName": "WT9932P4-TINY 透明底.webp",
+  "palette": {
+    "gpio": "#3498db",
+    "power": "#e74c3c",
+    "ground": "#2ecc71"
+  },
+  "exportSettings": {
+    "format": "png",
+    "scale": 1,
+    "quality": 90,
+    "optimizeSvg": true,
+    "smoothing": true
+  },
+  "groups": [
+    {
+      "start": [
+        452.5,
+        352.25
+      ],
+      "gap": 150,
+      "pins": [
+        {
+          "name": "IO16",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO17",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO18",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO19",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO20",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO21",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO22",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO23",
+          "color": "#3498db"
+        },
+        {
+          "name": "GND",
+          "color": "#2ecc71"
+        },
+        {
+          "name": "IO39",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO38",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO37",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO36",
+          "color": "#3498db"
+        },
+        {
+          "name": "GND",
+          "color": "#2ecc71"
+        },
+        {
+          "name": "IO34",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO33",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO32",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO26",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO27",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO28",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO29",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO30",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO31",
+          "color": "#3498db"
+        },
+        {
+          "name": "VO4",
+          "color": "#e74c3c"
+        },
+        {
+          "name": "3.3V",
+          "color": "#e74c3c"
+        },
+        {
+          "name": "GND",
+          "color": "#2ecc71"
+        },
+        {
+          "name": "5V",
+          "color": "#e74c3c"
+        }
+      ],
+      "connector": "左侧",
+      "scale": 0.7
+    },
+    {
+      "start": [
+        1817.5,
+        352.25
+      ],
+      "gap": 150,
+      "pins": [
+        {
+          "name": "IO15",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO14",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO13",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO12",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO11",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO10",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO9",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO6",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO5",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO4",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO3",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO2",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO54",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO53",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO52",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO50",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO49",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO48",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO47",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO46",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO45",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO44",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO43",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO40",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO41",
+          "color": "#3498db"
+        },
+        {
+          "name": "IO42",
+          "color": "#3498db"
+        },
+        {
+          "name": "GND",
+          "color": "#2ecc71"
+        }
+      ],
+      "connector": "右侧",
+      "scale": 0.7
+    }
+  ],
+  "imageRotation": 0
+}
