@@ -1,5 +1,6 @@
 'use strict';
 (() => {
+function localizedError(key,fallback){const value=new Error(globalThis.OpenPinMapI18n?globalThis.OpenPinMapI18n.t(key):fallback);value.i18nKey=key;return value;}
 const escapeXml=value=>String(value).replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&apos;'}[c])).replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g,'');
 function crc32(bytes){let c=0xffffffff;for(const b of bytes){c^=b;for(let n=0;n<8;n++)c=(c>>>1)^((c&1)?0xedb88320:0);}return(c^0xffffffff)>>>0;}
 // Canvas encoders default to 96 dpi. Keep A4 physical size in downloaded rasters.
@@ -8,7 +9,7 @@ async function withDpi(blob,dpi){
  if(blob.type==='image/png'){
   const chunk=new Uint8Array(21),v=new DataView(chunk.buffer);v.setUint32(0,9);chunk.set([112,72,89,115],4);v.setUint32(8,Math.round(dpi/0.0254));v.setUint32(12,Math.round(dpi/0.0254));chunk[16]=1;v.setUint32(17,crc32(chunk.subarray(4,17)));
   const parts=[bytes.subarray(0,33),chunk];let at=33;
-  while(at+12<=bytes.length){const size=new DataView(bytes.buffer,bytes.byteOffset+at,4).getUint32(0)+12;if(at+size>bytes.length)throw new Error('PNG 编码无效。');if(String.fromCharCode(...bytes.subarray(at+4,at+8))!=='pHYs')parts.push(bytes.subarray(at,at+size));at+=size;}
+  while(at+12<=bytes.length){const size=new DataView(bytes.buffer,bytes.byteOffset+at,4).getUint32(0)+12;if(at+size>bytes.length)throw localizedError('error.pngEncoding','PNG 编码无效。');if(String.fromCharCode(...bytes.subarray(at+4,at+8))!=='pHYs')parts.push(bytes.subarray(at,at+size));at+=size;}
   return new Blob(parts,{type:blob.type});
  }
  if(blob.type==='image/jpeg'){

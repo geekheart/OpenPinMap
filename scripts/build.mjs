@@ -8,15 +8,19 @@ await mkdir(path.join(out,'src'),{recursive:true});
 const config=JSON.parse(await readFile(path.join(root,'examples/p4.json'),'utf8'));
 const image=await readFile(path.join(root,'assets/p4.webp'));
 const defaults=`window.PIN_DEFAULTS = ${JSON.stringify(config)};\nwindow.PIN_DEFAULT_IMAGE = "data:image/webp;base64,${image.toString('base64')}";\n`;
-for(const name of ['index.html','style.css','app.js','src/model.js','src/export.js'])await copyFile(path.join(root,name),path.join(out,name));
+for(const name of ['index.html','style.css','app.js','src/i18n.js','src/model.js','src/export.js'])await copyFile(path.join(root,name),path.join(out,name));
 await cp(path.join(root,'assets'),path.join(out,'assets'),{recursive:true});
+await copyFile(path.join(root,'LICENSE'),path.join(out,'LICENSE'));
+await copyFile(path.join(root,'docs/assets.md'),path.join(out,'ASSETS.md'));
+const license=await readFile(path.join(root,'LICENSE'),'utf8');
 await writeFile(path.join(out,'defaults.js'),defaults);
 await writeFile(path.join(out,'.nojekyll'),'');
 let single=await readFile(path.join(root,'index.html'),'utf8');
 single=single.replace('<link rel="stylesheet" href="style.css">',`<style>${await readFile(path.join(root,'style.css'),'utf8')}</style>`);
 single=single.replace('href="assets/favicon.svg"',`href="data:image/svg+xml;base64,${(await readFile(path.join(root,'assets/favicon.svg'))).toString('base64')}"`);
-for(const [name,content] of [['defaults.js',defaults],['src/model.js',await readFile(path.join(root,'src/model.js'),'utf8')],['src/export.js',await readFile(path.join(root,'src/export.js'),'utf8')],['app.js',await readFile(path.join(root,'app.js'),'utf8')]]){
+for(const [name,content] of [['defaults.js',defaults],['src/i18n.js',await readFile(path.join(root,'src/i18n.js'),'utf8')],['src/model.js',await readFile(path.join(root,'src/model.js'),'utf8')],['src/export.js',await readFile(path.join(root,'src/export.js'),'utf8')],['app.js',await readFile(path.join(root,'app.js'),'utf8')]]){
  single=single.replace(`<script src="${name}"></script>`,`<script>${content.replaceAll('</script','<\\/script')}</script>`);
 }
+single=single.replace('<!doctype html>',`<!doctype html>\n<!--\n${license}\nProduct images and device trademarks retain their original ownership.\nAsset sources: https://github.com/geekheart/OpenPinMap/blob/main/docs/assets.md\n-->`);
 await writeFile(path.join(out,'OpenPinMap.html'),single);
 console.log(`Built dist/ and dist/OpenPinMap.html (${(Buffer.byteLength(single)/1024/1024).toFixed(1)} MB)`);

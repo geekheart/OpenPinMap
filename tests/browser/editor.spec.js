@@ -49,7 +49,7 @@ test('wheel and Ctrl-wheel zoom the canvas without browser zoom',async({page})=>
 test('image and group handles, movement, alignment and complete JSON round-trip',async({page},testInfo)=>{
  await ready(page);const c=await page.locator('#preview').boundingBox(),z=c.width/2480;
  await page.mouse.click(c.x+1240*z,c.y+1754*z);await expect(page.locator('#selection-name')).toHaveText('产品素材');let h=await page.locator('[data-handle="se"]').boundingBox();await page.mouse.move(h.x+h.width/2,h.y+h.height/2);await page.mouse.down();await page.mouse.move(h.x+h.width/2+8,h.y+h.height/2+20,{steps:5});await page.mouse.up();await expect(page.locator('#image-scale')).not.toHaveValue('70');
- await page.getByRole('button',{name:'引脚配置',exact:true}).click();h=await page.locator('[data-handle="se"]').boundingBox();await page.mouse.move(h.x+h.width/2,h.y+h.height/2);await page.mouse.down();await page.mouse.move(h.x+h.width/2+5,h.y+h.height/2+15,{steps:5});await page.mouse.up();await expect(page.locator('#group-scale')).not.toHaveValue('70');
+ await page.getByRole('button',{name:'引脚配置',exact:true}).click();await expect(page.locator('#selection-name')).toHaveText('左侧');h=await page.locator('[data-handle="se"]').boundingBox();await page.mouse.move(h.x+h.width/2,h.y+h.height/2);await page.mouse.down();await page.mouse.move(h.x+h.width/2+5,h.y+h.height/2+15,{steps:5});await page.mouse.up();await expect(page.locator('#group-scale')).not.toHaveValue('70');
  const b=await page.locator('#selection-box').boundingBox();await page.mouse.move(b.x+b.width/2,b.y+20);await page.mouse.down();await page.mouse.move(b.x+b.width/2-25,b.y+30,{steps:5});await page.mouse.up();await expect(page.locator('#group-x')).not.toHaveValue('452.5');
  await page.locator('#align-target').selectOption('previous');await page.locator('#align-top').click();await expect(page.locator('#group-y')).toHaveValue('352.3');
  const pending=page.waitForEvent('download');await page.locator('#save-project').click();const d=await pending,file=testInfo.outputPath('transforms.json');await d.saveAs(file);const p=JSON.parse(await readFile(file,'utf8'));expect(p.version).toBe(2);expect(p.state.groups[0].scale).toBeGreaterThan(.7);expect(p.state.imageScale).toBeGreaterThan(70);expect(p.state.paper.format).toBe('a4');
@@ -64,7 +64,7 @@ test('JPG quality changes file size; SVG has vector labels and embedded photo',a
 });
 test('quarter-turn image rotation preserves center and exports to project and SVG',async({page},testInfo)=>{
  await ready(page);const c=await page.locator('#preview').boundingBox(),z=c.width/2480;await page.mouse.click(c.x+1240*z,c.y+1754*z);const before=await page.locator('#selection-box').boundingBox();
- await page.locator('[data-rotation="90"]').click();await expect(page.locator('[data-rotation="90"]')).toHaveAttribute('aria-pressed','true');const after=await page.locator('#selection-box').boundingBox();expect(after.width).toBeCloseTo(before.height,0);expect(after.height).toBeCloseTo(before.width,0);expect(after.x+after.width/2).toBeCloseTo(before.x+before.width/2,0);expect(after.y+after.height/2).toBeCloseTo(before.y+before.height/2,0);
+ await page.locator('[data-rotation="90"]').click();await expect(page.locator('[data-rotation="90"]')).toHaveAttribute('aria-pressed','true');await expect.poll(async()=>Math.abs((await page.locator('#selection-box').boundingBox()).width-before.height)).toBeLessThan(.5);const after=await page.locator('#selection-box').boundingBox();expect(after.width).toBeCloseTo(before.height,0);expect(after.height).toBeCloseTo(before.width,0);expect(after.x+after.width/2).toBeCloseTo(before.x+before.width/2,0);expect(after.y+after.height/2).toBeCloseTo(before.y+before.height/2,0);
  const pending=page.waitForEvent('download');await page.locator('#save-project').click();const d=await pending,file=testInfo.outputPath('rotated.json');await d.saveAs(file);const saved=JSON.parse(await readFile(file,'utf8'));expect(saved.state.imageRotation).toBe(90);
  await page.locator('[data-rotation="0"]').click();await page.locator('#project-file').setInputFiles(file);await expect(page.locator('[data-rotation="90"]')).toHaveAttribute('aria-pressed','true');await page.locator('#export-png').click();await page.locator('#export-format').selectOption('svg');await expect(page.locator('#download-export')).toBeEnabled();const sv=page.waitForEvent('download');await page.locator('#download-export').click();const sd=await sv,sf=testInfo.outputPath('rotated.svg');await sd.saveAs(sf);expect(await readFile(sf,'utf8')).toContain('transform="rotate(90 ');
 });
@@ -73,4 +73,30 @@ test('capture material, pin-group and export controls for the README',async({pag
  await page.mouse.click(canvas.x+1240*scale,canvas.y+1754*scale);await expect(page.locator('#selection-box')).toBeVisible();await page.screenshot({path:testInfo.outputPath('material-controls.png')});
  await page.getByRole('button',{name:'引脚配置',exact:true}).click();await expect(page.locator('#selection-name')).toHaveText('左侧');await page.screenshot({path:testInfo.outputPath('pin-group-controls.png')});
  await page.locator('#export-png').click();await page.locator('#export-format').selectOption('jpg');await page.locator('#export-scale').selectOption('0.5');await expect(page.locator('#download-export')).toBeEnabled();await expect.poll(()=>page.locator('#export-preview').evaluate(i=>i.naturalWidth)).toBe(1240);await page.locator('#export-dialog').screenshot({path:testInfo.outputPath('export-settings.png')});
+});
+
+test('language switch preserves edits, unsaved bulk text and project schema',async({page},testInfo)=>{
+ await ready(page);await page.locator('[data-tab=pins]').click();
+ await page.locator('#project-name').fill('我的电路板');await page.locator('#project-name').press('Tab');
+ await page.getByRole('textbox',{name:'第 2 针名称',exact:true}).fill('自定义GPIO');await page.getByRole('textbox',{name:'第 2 针名称',exact:true}).press('Tab');
+ await page.locator('summary').click();await page.locator('#batch-pins').fill('尚未应用的批量内容');
+ await page.locator('#language-select').selectOption('en');
+ await expect(page.locator('html')).toHaveAttribute('lang','en');await expect(page.locator('#export-png')).toContainText('Export image');
+ await expect(page.getByRole('textbox',{name:'Pin 2 name',exact:true})).toHaveValue('自定义GPIO');await expect(page.locator('#batch-pins')).toHaveValue('尚未应用的批量内容');await expect(page.locator('#project-name')).toHaveValue('我的电路板');
+ const pending=page.waitForEvent('download');await page.locator('#save-project').click();const file=testInfo.outputPath('english-project.json');await(await pending).saveAs(file);const saved=JSON.parse(await readFile(file,'utf8'));
+ expect(saved.format).toBe('openpinmap');expect(saved.state.name).toBe('我的电路板');expect(saved.state.groups[0].pins[1].name).toBe('自定义GPIO');expect(saved.state).not.toHaveProperty('language');
+ await page.locator('#language-select').selectOption('zh-CN');await expect(page.locator('#save-project')).toHaveText('保存项目');await expect(page.locator('#project-name')).toHaveValue('我的电路板');
+});
+test('English URL covers panels, accessible controls, export and validation feedback',async({page})=>{
+ await page.goto('./?lang=en');await expect(page.locator('#source-thumbnail')).toHaveAttribute('src',/^data:image/);await expect(page.locator('#save-state')).toHaveText('Automatically saved on this device');
+ await expect(page.locator('#paper-size option[value=portrait]')).toHaveText('A4 · Portrait · 210 × 297 mm');await expect(page.locator('#github-link')).toHaveAttribute('href','https://github.com/geekheart/OpenPinMap');await expect(page.locator('#github-link svg')).toBeAttached();
+ await page.locator('[data-tab=pins]').click();await expect(page.getByRole('textbox',{name:'Pin 2 name',exact:true})).toBeVisible();
+ await page.locator('#config-file').setInputFiles({name:'invalid.json',mimeType:'application/json',buffer:Buffer.from('{bad')});await expect(page.locator('#toast')).toContainText('Invalid JSON');
+ await page.locator('#export-png').click();await expect(page.getByRole('dialog',{name:'Export image'})).toBeVisible();await expect(page.locator('#download-export')).toBeEnabled();await expect(page.locator('#export-info')).toContainText('Lossless');
+ await page.locator('#export-format').selectOption('svg');await expect(page.locator('#export-scale-label')).toHaveText('Image resolution');await expect(page.locator('#quality-label')).toHaveText('Embedded image quality');await expect(page.locator('#download-export')).toBeEnabled();await expect(page.locator('#export-info')).toContainText('Vector labels');
+ await page.locator('#close-export').click();await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+});
+test('offline English interface embeds translations without network requests',async({page})=>{
+ const urls=[];page.on('request',r=>urls.push(r.url()));const {pathToFileURL}=await import('node:url');await page.goto(pathToFileURL(path.join(root,'dist/OpenPinMap.html')).href+'?lang=en');
+ await expect(page.locator('#pin-total')).toHaveText('54 pins');await expect(page.locator('#save-project')).toHaveText('Save project');await expect(page.locator('#source-thumbnail')).toHaveAttribute('src',/^data:image/);expect(urls.filter(url=>/^https?:/.test(url))).toEqual([]);
 });

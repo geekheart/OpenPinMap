@@ -1,3 +1,5 @@
+简体中文 | [English](README.en.md)
+
 <div align="center">
   <img src="assets/favicon.svg" width="64" height="64" alt="OpenPinMap" />
   <h1>OpenPinMap</h1>
@@ -20,6 +22,8 @@
 上传开发板的正面产品图，设置两侧引脚名称、颜色与间距，拖动标签对齐焊孔，再导出可用于手册或产品页的引脚图。
 
 默认使用 **WT9932P4-TINY** 透明底产品图与 54 个引脚，按用户提供的 P4 参考配置排版。S31 HDK 示例仍保存在 `examples/s31.json`。图片与引脚来源见[素材说明](docs/assets.md)。
+
+页面默认使用简体中文。右上角可切换 **简体中文 / English**，也可通过 [?lang=en](https://geekheart.github.io/OpenPinMap/?lang=en) 直接打开英文界面。切换只影响操作界面，保留当前项目、未应用的批量文本、引脚名称与分组名称。旁边的 GitHub 图标可打开项目源码。离线单文件同样包含两种语言，无需联网加载语言包。
 
 ## 可以做什么
 
@@ -122,10 +126,11 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-单元测试覆盖 P4/S31 引脚顺序、v1/v2 项目兼容、变换参数、PNG/JPG DPI 元数据、SVG 转义和静态构建路径。浏览器测试覆盖画布缩放、拖拽手柄、项目保存恢复、导入导出、JPG 质量、SVG 标签及移动端布局。Actions 中保留截图和失败诊断；测试通过后才发布。
+单元测试覆盖 P4/S31 引脚顺序、v1/v2 项目兼容、变换参数、PNG/JPG DPI 元数据、SVG 转义、语言目录完整性、语言切换的数据隔离和静态构建路径。浏览器测试覆盖画布缩放、拖拽手柄、项目保存恢复、导入导出、JPG 质量、SVG 标签及移动端布局。Actions 中保留截图和失败诊断；测试通过后才发布。
 
 ```text
 app.js                  编辑交互、Canvas 渲染与文件操作
+src/i18n.js             中文与英文界面文案、显式翻译绑定
 src/model.js            项目及引脚配置校验
 src/export.js           DPI 元数据与 SVG 转义
 style.css               桌面与移动端布局
@@ -139,3 +144,7 @@ docs/                   素材、格式与部署说明
 ```
 
 页面不使用运行时第三方库。Playwright 是开发测试依赖；Node.js 仅用于构建与开发。README 组织和自动发布方式参考 [OpenBoxHub](https://github.com/geekheart/OpenBoxHub)。开发约定见 [AGENTS.md](AGENTS.md)，参与方式见 [CONTRIBUTING.md](CONTRIBUTING.md)。产品图片及商标归属见[素材说明](docs/assets.md)。
+
+## 许可证
+
+项目代码与原创文档使用 [MIT License](LICENSE)，Copyright (c) 2026 geekheart。第三方依赖保留各自许可证；产品图片、器件标识和商标仍归各自权利人，MIT 不另行授予这些素材的图片或商标权利。来源与素材范围见[素材说明](docs/assets.md)。
