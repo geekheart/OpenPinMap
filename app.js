@@ -17,6 +17,7 @@ function colorFor(name){if(/^(GND|GROUND|VSS)$/i.test(name.trim()))return $('col
 function cleanName(){return (state.name||'pinout').replace(/[\\/:*?"<>|\x00-\x1F]/g,'_');}
 function loadImage(data){return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(i18n.error('error.imageRead'));img.src=data;});}
 const {validateGroups,validateProject} = window.OpenPinMapModel;
+const geometry=window.OpenPinMapGeometry;
 async function replaceState(next,resetHistory=false){
  const ticket=++importTicket, img=state?.imageData===next.imageData?sourceImage:await loadImage(next.imageData);
  if(ticket!==importTicket)return;
@@ -24,23 +25,42 @@ async function replaceState(next,resetHistory=false){
  state=next;sourceImage=img;selection=null;selectedGroup=clamp(selectedGroup,0,state.groups.length-1);syncUI();if(resetHistory){history=[];historyIndex=-1;}record();fit();
 }
 function groupMetrics(g){
- const fs=g.font?.size||state.fontSize;metric.font=`${fs}px ${state.fontFamily}`;
+ const fs=g.font?.size||state.fontSize,verticalText=g.textDirection==='vertical';metric.font=`${fs}px ${state.fontFamily}`;
  let maxWidth=0,maxHeight=0;
+ if(verticalText){
+  let length=1;
+  for(const p of g.pins){const chars=Array.from(p.name);length=Math.max(length,chars.length);for(const char of chars){const m=metric.measureText(char);maxWidth=Math.max(maxWidth,m.width);maxHeight=Math.max(maxHeight,(m.actualBoundingBoxAscent||fs*.75)+(m.actualBoundingBoxDescent||0));}}
+  const lineHeight=Math.max(fs*1.1,maxHeight);
+  return {width:Math.ceil(maxWidth||fs*.75)+Math.floor(state.fontSize*.4)*2,height:Math.ceil(length*lineHeight)+state.fontSize*2,fontSize:fs,lineHeight};
+ }
  for(const p of g.pins){const m=metric.measureText(p.name||' ');maxWidth=Math.max(maxWidth,m.width);maxHeight=Math.max(maxHeight,(m.actualBoundingBoxAscent||fs*.75)+(m.actualBoundingBoxDescent||0));}
  return {width:Math.ceil(maxWidth)+state.fontSize*2,height:Math.ceil(maxHeight||fs*.75)+Math.floor(state.fontSize*.4)*2,fontSize:fs};
+}
+function pinPosition(g,i){return g.layout==='horizontal'?{x:i*g.gap,y:0}:{x:0,y:i*g.gap};}
+// Canvas and SVG share positions, glyph baselines and leader endpoints.
+function pinText(g,m,name,x,y){
+ const chars=g.textDirection==='vertical'?Array.from(name):[name];metric.font=`${m.fontSize}px ${state.fontFamily}`;
+ return chars.map((text,i)=>{const tm=metric.measureText(text),asc=tm.actualBoundingBoxAscent||m.fontSize*.75,des=tm.actualBoundingBoxDescent||0;return{text,x:x+(m.width-tm.width)/2,y:y+(m.lineHeight?(m.height-chars.length*m.lineHeight)/2+i*m.lineHeight+(m.lineHeight+asc-des)/2:(m.height+asc-des)/2)};});
+}
+function pinGuide(g,m,x,y,ib){
+ const matrix=geometry.groupMatrix(g,m),size=geometry.labelSize(g,m),p=geometry.point(matrix,x,y),box=geometry.bounds(matrix,size.w,size.h),label={x:p.x+box.x-matrix[4],y:p.y+box.y-matrix[5],w:box.w,h:box.h},group=geometry.groupBounds(g,m);
+ let from,to;
+ if(geometry.horizontalAxis(g)){const above=group.y+group.h/2<=ib.y+ib.h/2;from={x:label.x+label.w/2,y:above?label.y+label.h:label.y};to={x:from.x,y:above?ib.y:ib.y+ib.h};}
+ else{const left=group.x+group.w/2<=ib.x+ib.w/2;from={x:left?label.x+label.w:label.x,y:label.y+label.h/2};to={x:left?ib.x:ib.x+ib.w,y:from.y};}
+ const a=geometry.inversePoint(matrix,from.x,from.y),b=geometry.inversePoint(matrix,to.x,to.y);return{x1:a.x,y1:a.y,x2:b.x,y2:b.y};
 }
 function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill();}
 function drawContent(ctx,{labels=true}={}){
  if(state.background!=='transparent'){ctx.fillStyle=state.background==='dark'?'#202c25':'#ffffff';ctx.fillRect(0,0,state.width,state.height);}
  const ib=imageBounds();drawBoard(ctx);const nextHits=[];
  if(labels)state.groups.forEach((g,gi)=>{
-  const m=groupMetrics(g),s=g.scale||1;ctx.save();ctx.translate(...g.start);ctx.scale(s,s);ctx.font=`${m.fontSize}px ${state.fontFamily}`;
+  const m=groupMetrics(g);ctx.save();ctx.transform(...geometry.groupMatrix(g,m));ctx.font=`${m.fontSize}px ${state.fontFamily}`;
   g.pins.forEach((pin,i)=>{
-   const y=i*g.gap;
-   if(state.guides){const left=g.start[0]+m.width*s<=ib.x+ib.w/2,edge=left?ib.x:ib.x+ib.w;ctx.strokeStyle=pin.color;ctx.lineWidth=Math.max(2,state.fontSize*.04);ctx.beginPath();ctx.moveTo(left?m.width:0,y+m.height/2);ctx.lineTo((edge-g.start[0])/s,y+m.height/2);ctx.stroke();}
-   ctx.fillStyle=pin.color;roundRect(ctx,0,y,m.width,m.height,m.height/2*state.radius/100);
-   const tm=ctx.measureText(pin.name),asc=tm.actualBoundingBoxAscent||m.fontSize*.75,des=tm.actualBoundingBoxDescent||0;
-   ctx.fillStyle='#ffffff';ctx.textAlign='left';ctx.fillText(pin.name,(m.width-tm.width)/2,y+(m.height+asc-des)/2);
+   const {x,y}=pinPosition(g,i);
+   if(state.guides){const line=pinGuide(g,m,x,y,ib);ctx.strokeStyle=pin.color;ctx.lineWidth=Math.max(2,state.fontSize*.04);ctx.beginPath();ctx.moveTo(line.x1,line.y1);ctx.lineTo(line.x2,line.y2);ctx.stroke();}
+   const rotated=!!g.labelRotation,lx=rotated?0:x,ly=rotated?0:y;ctx.save();if(rotated)ctx.transform(...geometry.labelMatrix(g,m,x,y));
+   ctx.fillStyle=pin.color;roundRect(ctx,lx,ly,m.width,m.height,Math.min(m.width,m.height)/2*state.radius/100);
+   ctx.fillStyle='#ffffff';ctx.textAlign='left';for(const glyph of pinText(g,m,pin.name,lx,ly))ctx.fillText(glyph.text,glyph.x,glyph.y);ctx.restore();
   });ctx.restore();if(g.pins.length)nextHits.push({...groupBounds(g),group:gi});
  });return nextHits;
 }
@@ -94,13 +114,17 @@ function syncUI(){
 }
 function syncGroups(){
  const tabs=$('group-tabs');tabs.replaceChildren();state.groups.forEach((g,i)=>{const b=document.createElement('button');b.textContent=g.connector||`H${i+1}`;b.className=i===selectedGroup?'active':'';b.onclick=()=>{selectedGroup=i;selection='group';syncGroups();schedule();};tabs.append(b);});
- syncTransformFields();const g=state.groups[selectedGroup];$('group-name').value=g.connector;$('group-x').value=Math.round(g.start[0]*10)/10;$('group-y').value=Math.round(g.start[1]*10)/10;$('group-gap').value=Math.round(g.gap*100)/100;$('delete-group').disabled=state.groups.length<=1;
+ syncTransformFields();syncLayoutControls();const g=state.groups[selectedGroup];$('group-name').value=g.connector;$('group-x').value=Math.round(g.start[0]*10)/10;$('group-y').value=Math.round(g.start[1]*10)/10;$('group-gap').value=Math.round(g.gap*100)/100;$('delete-group').disabled=state.groups.length<=1;
  const list=$('pin-list');list.replaceChildren();g.pins.forEach((pin,i)=>{
   const row=document.createElement('div');row.className='pin-row';const n=document.createElement('span');n.className='pin-number';n.textContent=String(i+1).padStart(2,'0');
   const color=document.createElement('input');color.type='color';color.value=pin.color;color.setAttribute('aria-label',t('pin.colorAria',{number:i+1}));color.oninput=()=>{pin.color=color.value;schedule();};color.onchange=record;
   const name=document.createElement('input');name.type='text';name.value=pin.name;name.maxLength=80;name.setAttribute('aria-label',t('pin.nameAria',{number:i+1}));name.oninput=()=>{pin.name=name.value;schedule();};name.onchange=()=>{record();$('batch-pins').value=g.pins.map(p=>p.name).join('\n');};
   const remove=document.createElement('button');remove.className='remove-pin';remove.textContent='×';remove.setAttribute('aria-label',t('pin.deleteAria',{number:i+1}));remove.onclick=()=>{g.pins.splice(i,1);syncGroups();schedule();record();};row.append(n,color,name,remove);list.append(row);
  });$('batch-pins').value=g.pins.map(p=>p.name).join('\n');
+}
+function syncLayoutControls(){
+ const g=state.groups[selectedGroup],horizontal=geometry.horizontalAxis(g);$('group-layout').value=g.layout;$('group-text-direction').value=g.textDirection;$('label-rotation').value=g.labelRotation||0;$('group-rotation').value=g.rotation||0;$('group-mirror-x').checked=!!g.mirrorX;$('group-mirror-y').checked=!!g.mirrorY;
+ for(const [id,key] of [['align-top',horizontal?'align.left':'align.top'],['align-bottom',horizontal?'align.right':'align.bottom'],['reverse-pins',horizontal?'pin.reverseHorizontal':'pin.reverse']]){const el=$(id).querySelector('[data-i18n]');el.dataset.i18n=key;el.textContent=t(key);}
 }
 function selectTab(value){tab=value;if(value==='pins')selection='group';document.querySelectorAll('.tab').forEach(el=>el.classList.toggle('active',el.dataset.tab===value));document.querySelectorAll('.panel').forEach(el=>el.classList.toggle('active',el.id===`panel-${value}`));schedule();}
 function download(blob,name){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);}
@@ -119,13 +143,20 @@ async function crop(){
 }
 function imageBounds(){const swap=state.imageRotation===90||state.imageRotation===270;return{x:state.imageX,y:state.imageY,w:(swap?sourceImage.height:sourceImage.width)*state.imageScale/100,h:(swap?sourceImage.width:sourceImage.height)*state.imageScale/100};}
 function drawBoard(ctx){const b=imageBounds(),w=sourceImage.width*state.imageScale/100,h=sourceImage.height*state.imageScale/100;ctx.save();ctx.translate(b.x+b.w/2,b.y+b.h/2);ctx.rotate((state.imageRotation||0)*Math.PI/180);ctx.drawImage(sourceImage,-w/2,-h/2,w,h);ctx.restore();}
-function groupBounds(g){const m=groupMetrics(g),s=g.scale||1;return{x:g.start[0],y:g.start[1],w:m.width*s,h:((Math.max(1,g.pins.length)-1)*g.gap+m.height)*s};}
+function groupBounds(g){return geometry.groupBounds(g,groupMetrics(g));}
+function changeGroupLayout(g,update,{keepCenter=false}={}){
+ const before=groupBounds(g),size=geometry.labelSize(g,groupMetrics(g)),clearance=Math.max(0,g.gap-(g.layout==='horizontal'?size.w:size.h));
+ update();
+ const next=geometry.labelSize(g,groupMetrics(g));g.gap=clamp((g.layout==='horizontal'?next.w:next.h)+clearance,1,2000);
+ if(keepCenter){const after=groupBounds(g);g.start=[before.x+(before.w-after.w)/2,before.y+(before.h-after.h)/2];}
+ selection='group';syncTransformFields();syncLayoutControls();schedule();record();
+}
 function selectedBounds(){return selection==='image'?imageBounds():selection==='group'?groupBounds(state.groups[selectedGroup]):null;}
 function syncSelection(){
  const box=$('selection-box'),b=selectedBounds();box.hidden=!b;if(!b)return;
  Object.assign(box.style,{left:`${b.x*zoom}px`,top:`${b.y*zoom}px`,width:`${b.w*zoom}px`,height:`${b.h*zoom}px`});
  $('selection-name').textContent=selection==='image'?t('image.title'):state.groups[selectedGroup].connector;
- box.querySelectorAll('[data-handle="n"],[data-handle="s"]').forEach(el=>el.hidden=selection!=='group'||state.groups[selectedGroup].pins.length<2);
+ for(const handle of ['n','s','w','e'])box.querySelector(`[data-handle="${handle}"]`).hidden=selection!=='group'||state.groups[selectedGroup].pins.length<2||(['w','e'].includes(handle)!==geometry.horizontalAxis(state.groups[selectedGroup]));
 }
 function syncTransformFields(){
  $('image-x').value=Math.round(state.imageX*10)/10;$('image-y').value=Math.round(state.imageY*10)/10;$('image-scale').value=state.imageScale;$('image-scale-value').textContent=`${Math.round(state.imageScale*10)/10}%`;
@@ -167,11 +198,12 @@ function bindCanvas(){
    if(selection==='image'){state.imageX=x;state.imageY=y;}else state.groups[selectedGroup].start=[x,y];
   }else{
    const h=d.handle,west=h.includes('w'),north=h.includes('n');
-   if(h==='n'||h==='s'){
+   if(['n','s','w','e'].includes(h)){
     const g=state.groups[selectedGroup],m=groupMetrics(g),s=g.scale||1;
-    const wanted=h==='n'?b.h-(p.y-d.y):b.h+(p.y-d.y);
-    g.gap=clamp((wanted/s-m.height)/(g.pins.length-1),1,2000);
-    if(h==='n')g.start[1]=b.y+b.h-groupBounds(g).h;
+    const horizontal=geometry.horizontalAxis(g),size=horizontal?'w':'h',axis=horizontal?'x':'y',fromStart=h==='n'||h==='w';
+    const wanted=b[size]+(p[axis]-d[axis])*(fromStart?-1:1);
+    const label=geometry.labelSize(g,m);g.gap=clamp((wanted/s-(g.layout==='horizontal'?label.w:label.h))/(g.pins.length-1),1,2000);
+    if(fromStart)g.start[horizontal?0:1]=b[axis]+b[size]-groupBounds(g)[size];
    }else{
     const dx=(p.x-d.x)*(west?-1:1),dy=(p.y-d.y)*(north?-1:1);
     const factor=1+(dx*b.w+dy*b.h)/(b.w*b.w+b.h*b.h);
@@ -205,10 +237,11 @@ function exportSvg(){
  const parts=[`<svg xmlns="http://www.w3.org/2000/svg" width="${a4?(landscape?'297mm':'210mm'):w}" height="${a4?(landscape?'210mm':'297mm'):h}" viewBox="0 0 ${state.width} ${state.height}">`,`<title>${esc(state.name)}</title>`];
  if(state.background!=='transparent')parts.push(`<rect width="100%" height="100%" fill="${state.background==='dark'?'#202c25':'#ffffff'}"/>`);
  const iw=sourceImage.width*state.imageScale/100,ih=sourceImage.height*state.imageScale/100,cx=ib.x+ib.w/2,cy=ib.y+ib.h/2;parts.push(`<image x="${cx-iw/2}" y="${cy-ih/2}" width="${iw}" height="${ih}" transform="rotate(${state.imageRotation||0} ${cx} ${cy})" href="${esc(imageData)}"/>`);
- if(exportLabels)for(const g of state.groups){const m=groupMetrics(g),s=g.scale||1;parts.push(`<g transform="translate(${g.start.join(' ')}) scale(${s})" font-family="${esc(state.fontFamily)}" font-size="${m.fontSize}">`);metric.font=`${m.fontSize}px ${state.fontFamily}`;
-  g.pins.forEach((p,i)=>{const y=i*g.gap;if(state.guides){const left=g.start[0]+m.width*s<=ib.x+ib.w/2,edge=left?ib.x:ib.x+ib.w;parts.push(`<path d="M ${left?m.width:0} ${y+m.height/2} H ${(edge-g.start[0])/s}" stroke="${p.color}" stroke-width="${Math.max(2,state.fontSize*.04)}"/>`);}
-   const tm=metric.measureText(p.name),asc=tm.actualBoundingBoxAscent||m.fontSize*.75,des=tm.actualBoundingBoxDescent||0;
-   parts.push(`<rect x="0" y="${y}" width="${m.width}" height="${m.height}" rx="${m.height/2*state.radius/100}" fill="${p.color}"/>`,`<text x="${(m.width-tm.width)/2}" y="${y+(m.height+asc-des)/2}" fill="#ffffff" xml:space="preserve">${esc(p.name)}</text>`);
+ if(exportLabels)for(const g of state.groups){const m=groupMetrics(g),s=g.scale||1,transform=g.rotation||g.mirrorX||g.mirrorY?`matrix(${geometry.groupMatrix(g,m).join(' ')})`:`translate(${g.start.join(' ')}) scale(${s})`;parts.push(`<g transform="${transform}" font-family="${esc(state.fontFamily)}" font-size="${m.fontSize}">`);
+  g.pins.forEach((p,i)=>{const {x,y}=pinPosition(g,i);if(state.guides){const line=pinGuide(g,m,x,y,ib);parts.push(`<path d="M ${line.x1} ${line.y1} L ${line.x2} ${line.y2}" stroke="${p.color}" stroke-width="${Math.max(2,state.fontSize*.04)}"/>`);}
+   const rotated=!!g.labelRotation,lx=rotated?0:x,ly=rotated?0:y;if(rotated)parts.push(`<g transform="matrix(${geometry.labelMatrix(g,m,x,y).join(' ')})">`);
+   parts.push(`<rect x="${lx}" y="${ly}" width="${m.width}" height="${m.height}" rx="${Math.min(m.width,m.height)/2*state.radius/100}" fill="${p.color}"/>`);
+   for(const glyph of pinText(g,m,p.name,lx,ly))parts.push(`<text x="${glyph.x}" y="${glyph.y}" fill="#ffffff" xml:space="preserve">${esc(glyph.text)}</text>`);if(rotated)parts.push('</g>');
   });parts.push('</g>');
  }parts.push('</svg>');return new Blob(parts,{type:'image/svg+xml'});
 }
@@ -263,12 +296,16 @@ function bind(){
  $('fit').onclick=fit;$('actual').onclick=()=>setZoom(1);$('zoom-in').onclick=()=>setZoom(zoom*1.25);$('zoom-out').onclick=()=>setZoom(zoom/1.25);
  $('paper-size').onchange=()=>{const v=$('paper-size').value;state.paper={format:v==='custom'?'custom':'a4',orientation:v==='landscape'?'landscape':'portrait',dpi:300};if(v!=='custom'){state.width=v==='portrait'?2480:3508;state.height=v==='portrait'?3508:2480;}syncUI();fit();record();};
  $('group-scale').oninput=()=>{state.groups[selectedGroup].scale=clamp($('group-scale').valueAsNumber/100,.1,5);syncTransformFields();schedule();};$('group-scale').onchange=record;
- for(const [id,fraction] of [['align-top',0],['align-center',.5],['align-bottom',1]])$(id).onclick=()=>{const target=$('align-target').value,b=target==='image'?imageBounds():target==='canvas'?{x:0,y:0,w:state.width,h:state.height}:groupBounds(state.groups[(selectedGroup+1)%state.groups.length]),g=state.groups[selectedGroup];g.start[1]=b.y+(b.h-groupBounds(g).h)*fraction;selection='group';syncTransformFields();schedule();record();};
+ for(const [id,fraction] of [['align-top',0],['align-center',.5],['align-bottom',1]])$(id).onclick=()=>{const target=$('align-target').value,b=target==='image'?imageBounds():target==='canvas'?{x:0,y:0,w:state.width,h:state.height}:groupBounds(state.groups[(selectedGroup+1)%state.groups.length]),g=state.groups[selectedGroup],horizontal=geometry.horizontalAxis(g),axis=horizontal?'x':'y',size=horizontal?'w':'h';g.start[horizontal?0:1]=b[axis]+(b[size]-groupBounds(g)[size])*fraction;selection='group';syncTransformFields();schedule();record();};
  $('undo').onclick=()=>travel(-1);$('redo').onclick=()=>travel(1);
  $('group-name').oninput=()=>{state.groups[selectedGroup].connector=$('group-name').value;};$('group-name').onchange=()=>{syncGroups();record();};
  for(const [id,index] of [['group-x',0],['group-y',1]]){$(id).oninput=()=>{if(Number.isFinite($(id).valueAsNumber)){state.groups[selectedGroup].start[index]=clamp($(id).valueAsNumber,-16000,16000);schedule();}};$(id).onchange=record;}
  $('group-gap').oninput=()=>{if(Number.isFinite($('group-gap').valueAsNumber)){state.groups[selectedGroup].gap=clamp($('group-gap').valueAsNumber,1,2000);schedule();}};$('group-gap').onchange=record;
- $('add-group').onclick=()=>{if(state.groups.reduce((n,g)=>n+g.pins.length,0)>=1000)return toast('error.pinLimit');if(state.groups.length>=24){toast('error.groupLimit');return;}state.groups.push({connector:`H${state.groups.length+1}`,start:[100,100],gap:state.fontSize*2,pins:[{name:'IO1',color:colorFor('IO1')}]});selectedGroup=state.groups.length-1;syncGroups();schedule();record();};
+ $('group-layout').onchange=()=>{const g=state.groups[selectedGroup];changeGroupLayout(g,()=>{g.layout=$('group-layout').value;});};
+ $('group-text-direction').onchange=()=>{const g=state.groups[selectedGroup];changeGroupLayout(g,()=>{g.textDirection=$('group-text-direction').value;});};
+ $('label-rotation').onchange=()=>{const g=state.groups[selectedGroup];changeGroupLayout(g,()=>{g.labelRotation=Number($('label-rotation').value);},{keepCenter:true});};
+ for(const [id,key] of [['group-rotation','rotation'],['group-mirror-x','mirrorX'],['group-mirror-y','mirrorY']])$(id).onchange=()=>{const g=state.groups[selectedGroup],before=groupBounds(g);g[key]=$(id).type==='checkbox'?$(id).checked:Number($(id).value);const after=groupBounds(g);g.start=[before.x+(before.w-after.w)/2,before.y+(before.h-after.h)/2];selection='group';syncTransformFields();syncLayoutControls();schedule();record();};
+ $('add-group').onclick=()=>{if(state.groups.reduce((n,g)=>n+g.pins.length,0)>=1000)return toast('error.pinLimit');if(state.groups.length>=24){toast('error.groupLimit');return;}state.groups.push({connector:`H${state.groups.length+1}`,start:[100,100],gap:state.fontSize*2,layout:'vertical',textDirection:'horizontal',labelRotation:0,rotation:0,mirrorX:false,mirrorY:false,pins:[{name:'IO1',color:colorFor('IO1')}]});selectedGroup=state.groups.length-1;syncGroups();schedule();record();};
  $('delete-group').onclick=()=>{if(state.groups.length===1)return;state.groups.splice(selectedGroup,1);selectedGroup=0;syncGroups();schedule();record();};
  $('add-pin').onclick=()=>{const g=state.groups[selectedGroup];if(state.groups.reduce((n,g)=>n+g.pins.length,0)>=1000)return toast('error.pinLimit');if(g.pins.length>=300)return toast('error.groupPinLimitShort');g.pins.push({name:'IO',color:colorFor('IO')});syncGroups();schedule();record();};
  $('reverse-pins').onclick=()=>{state.groups[selectedGroup].pins.reverse();syncGroups();schedule();record();};
@@ -298,6 +335,7 @@ function refreshLanguage(){
  setSaveState(saveStateKey);
  if(!state)return;
  $('alpha-tag').textContent=t(hasTransparency?'status.alpha':'status.opaque');
+ syncLayoutControls();
  $('pin-list').querySelectorAll('.pin-row').forEach((row,i)=>{
   row.querySelector('input[type=color]').setAttribute('aria-label',t('pin.colorAria',{number:i+1}));
   row.querySelector('input[type=text]').setAttribute('aria-label',t('pin.nameAria',{number:i+1}));

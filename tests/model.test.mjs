@@ -40,6 +40,87 @@ test('v2 A4, image and group transforms, export options survive JSON round-trip'
  const s=validateProject(JSON.parse(JSON.stringify(p)));assert.deepEqual([s.width,s.height],[3508,2480]);assert.equal(s.imageScale,321.25);assert.equal(s.imageRotation,270);assert.equal(s.imageX,91.5);assert.equal(s.groups[0].scale,1.75);assert.deepEqual(s.groups[0].start,[120.25,342.75]);assert.equal(s.groups[0].gap,183.25);assert.deepEqual(s.exportSettings,p.state.exportSettings);
 });
 test('v1 projects keep custom dimensions and default group scale',()=>{const s=validateProject(project());assert.equal(s.paper.format,'custom');assert.equal(s.groups[0].scale,1);assert.deepEqual([s.width,s.height],[source.width,source.height]);});
+test('mixed four-side group layouts and pin metadata survive project JSON round-trip',()=>{
+ const p=project();p.version=2;
+ p.state.groups=[
+  {...structuredClone(source.groups[0]),connector:'左侧',layout:'vertical',start:[100,300]},
+  {...structuredClone(source.groups[1]),connector:'右侧',layout:'vertical',start:[1800,300]},
+  {...structuredClone(source.groups[0]),connector:'顶部',layout:'horizontal',start:[400,100],scale:1.25},
+  {...structuredClone(source.groups[1]),connector:'底部',layout:'horizontal',start:[400,2500],scale:.75}
+ ];
+ const first=validateProject(JSON.parse(JSON.stringify(p))),saved={format:'openpinmap',version:2,state:first};
+ const restored=validateProject(JSON.parse(JSON.stringify(saved)));
+ assert.deepEqual(restored.groups,first.groups);
+ assert.deepEqual(restored.groups.map(g=>g.layout),['vertical','vertical','horizontal','horizontal']);
+ assert.deepEqual(restored.groups.map(g=>({connector:g.connector,start:g.start,gap:g.gap,scale:g.scale,pins:g.pins})),p.state.groups.map(g=>({connector:g.connector,start:g.start,gap:g.gap,scale:g.scale||1,pins:g.pins})));
+ assert.equal(restored.groups[3].pins[1]._net,'TX0');assert.equal(restored.groups[3].pins[1]._alias,'IO58 / TX0');
+});
+test('missing and invalid group layouts default to vertical in legacy and current projects',()=>{
+ for(const version of [1,2])for(const format of ['openpinmap','pins-studio']){
+  const p=project();p.version=version;p.format=format;
+  assert.deepEqual(validateProject(p).groups.map(g=>g.layout),['vertical','vertical']);
+ }
+ for(const layout of [undefined,null,'diagonal','Horizontal','',0,1,true,false,{},[]]){
+  const groups=structuredClone(source.groups);groups[0].layout=layout;
+  const before=JSON.stringify(groups),validated=validateGroups(groups);
+  assert.equal(validated[0].layout,'vertical');assert.equal(JSON.stringify(groups),before);
+ }
+ for(const layout of ['vertical','horizontal']){
+  const groups=structuredClone(source.groups);groups[0].layout=layout;
+  assert.equal(validateGroups(groups)[0].layout,layout);
+ }
+});
+test('independent text, capsule and group transforms survive project JSON round-trip',()=>{
+ const p=project();p.version=2;
+ p.state.groups=Array.from({length:4},(_,i)=>({...structuredClone(source.groups[i%2]),connector:`H${i+1}`,layout:i%2?'horizontal':'vertical',textDirection:i<2?'horizontal':'vertical',labelRotation:[0,90,180,270][i],rotation:[270,180,90,0][i],mirrorX:i%2===0,mirrorY:i>=2}));
+ const before=structuredClone(p),first=validateProject(p),restored=validateProject(JSON.parse(JSON.stringify({format:'openpinmap',version:2,state:first})));
+ assert.deepEqual(restored.groups,first.groups);
+ for(let i=0;i<4;i++){
+  for(const field of ['layout','textDirection','labelRotation','rotation','mirrorX','mirrorY'])assert.equal(restored.groups[i][field],p.state.groups[i][field]);
+  assert.deepEqual(restored.groups[i].pins,p.state.groups[i].pins);
+ }
+ assert.deepEqual(p,before);
+});
+test('missing text direction retains the old appearance for either layout and project format',()=>{
+ for(const version of [1,2])for(const format of ['openpinmap','pins-studio'])for(const layout of ['vertical','horizontal']){
+  const p=project();p.version=version;p.format=format;p.state.groups[0].layout=layout;delete p.state.groups[0].textDirection;
+  const expected=layout==='horizontal'?'vertical':'horizontal',validated=validateProject(p);
+  assert.equal(validated.groups[0].textDirection,expected);
+  assert.equal(validateProject(JSON.parse(JSON.stringify({format,version,state:validated}))).groups[0].textDirection,expected);
+ }
+ for(const layout of ['vertical','horizontal'])for(const textDirection of ['vertical','horizontal']){
+  const groups=structuredClone(source.groups);Object.assign(groups[0],{layout,textDirection});
+  assert.equal(validateGroups(groups)[0].textDirection,textDirection);
+ }
+});
+test('invalid text directions and non-quarter-turn group angles use safe defaults without mutation',()=>{
+ const invalid=[null,'','Vertical','diagonal',0,1,45,-90,360,'90',true,false,{},[]];
+ for(const layout of ['vertical','horizontal'])for(const value of invalid){
+  const groups=structuredClone(source.groups);Object.assign(groups[0],{layout,textDirection:value,labelRotation:value,rotation:value});const before=structuredClone(groups),g=validateGroups(groups)[0];
+  assert.equal(g.textDirection,'horizontal');assert.equal(g.labelRotation,0);assert.equal(g.rotation,0);assert.deepEqual(groups,before);
+ }
+ for(const angle of [0,90,180,270]){
+  const groups=structuredClone(source.groups);Object.assign(groups[0],{labelRotation:angle,rotation:angle});const g=validateGroups(groups)[0];
+  assert.equal(g.labelRotation,angle);assert.equal(g.rotation,angle);
+ }
+});
+test('group mirror flags accept only true booleans',()=>{
+ for(const value of [undefined,null,false,0,1,-1,'true','false','',{},[]]){
+  const groups=structuredClone(source.groups);Object.assign(groups[0],{mirrorX:value,mirrorY:value});const before=structuredClone(groups),g=validateGroups(groups)[0];
+  assert.equal(g.mirrorX,false);assert.equal(g.mirrorY,false);assert.deepEqual(groups,before);
+ }
+ const groups=structuredClone(source.groups);Object.assign(groups[0],{mirrorX:true,mirrorY:true});const g=validateGroups(groups)[0];assert.equal(g.mirrorX,true);assert.equal(g.mirrorY,true);
+});
+test('new group transform defaults preserve reference positions, pin order, colors and metadata',()=>{
+ for(const filename of ['p4.json','s31.json']){
+  const reference=JSON.parse(readFileSync(new URL(`../examples/${filename}`,import.meta.url))),before=structuredClone(reference),groups=validateGroups(reference.groups);
+  for(let i=0;i<groups.length;i++){
+   assert.deepEqual({textDirection:groups[i].textDirection,labelRotation:groups[i].labelRotation,rotation:groups[i].rotation,mirrorX:groups[i].mirrorX,mirrorY:groups[i].mirrorY},{textDirection:'horizontal',labelRotation:0,rotation:0,mirrorX:false,mirrorY:false});
+   assert.deepEqual(groups[i].start,reference.groups[i].start);assert.equal(groups[i].gap,reference.groups[i].gap);assert.deepEqual(groups[i].pins,reference.groups[i].pins);
+  }
+  assert.deepEqual(reference,before);
+ }
+});
 test('P4 default is transparent A4 with unchanged 27 pins on each side',()=>{const s=JSON.parse(readFileSync(new URL('../examples/p4.json',import.meta.url)));assert.equal(s.paper.format,'a4');assert.deepEqual([s.width,s.height],[2480,3508]);assert.equal(s.background,'transparent');assert.deepEqual(s.groups.map(g=>g.pins.length),[27,27]);assert.equal(s.groups[0].pins[0].name,'IO16');assert.equal(s.groups[1].pins[26].name,'GND');assert.equal(s.groups[0].pins[23].name,'VO4');});
 
 test('rotation accepts quarter turns and defaults older projects to zero',()=>{for(const angle of [0,90,180,270]){const p=project();p.state.imageRotation=angle;assert.equal(validateProject(p).imageRotation,angle);}const p=project();p.state.imageRotation=45;assert.equal(validateProject(p).imageRotation,0);});

@@ -19,7 +19,7 @@
 
 ![OpenPinMap v1.1 workspace, shown in Chinese](docs/images/overview.png)
 
-Upload a front-view board image, set pin names, colors and spacing on either side, drag labels into alignment, and export a pinout diagram for a manual or product page.
+Upload a front-view board image, set pin names, colors and spacing on each side, drag labels into alignment, and export a pinout diagram for a manual or product page.
 
 The default example uses the transparent **WT9932P4-TINY** image and 54 pins arranged from the supplied P4 reference configuration. The S31 HDK example remains in `examples/s31.json`. Image and pin sources are documented in [Asset sources (Chinese)](docs/assets.md).
 
@@ -30,9 +30,9 @@ The interface defaults to Simplified Chinese. Choose **简体中文 / English** 
 | Feature | Controls |
 | --- | --- |
 | Image processing | Upload or drop PNG / JPEG / WebP; trim transparent margins, position and scale the image, rotate by 0° / 90° / 180° / 270° |
-| Multiple pin groups | Add groups and pins, edit names, individual colors, starting positions and spacing, enter names in bulk or reverse their order |
-| Drag-to-layout editing | Select an image or PIN group; use corner handles for proportional scaling, top/bottom handles for group spacing, and drag with snapping |
-| Label style | Font size, typeface, corner radius, leader lines, and GPIO / power / GND colors |
+| Multiple pin groups | Add groups and pins, choose label layout and text direction independently, edit names, individual colors, starting positions and spacing, enter names in bulk or reverse their order |
+| Drag-to-layout editing | Select an image or PIN group; use corner handles for proportional scaling, change spacing along the group's layout axis, and drag with snapping |
+| Label style | Font size, typeface, corner radius, leader lines, label rotation, group rotation and X/Y-axis mirroring, and GPIO / power / GND colors |
 | A4 canvas | Portrait 210 × 297 mm or landscape 297 × 210 mm at 300 DPI, with custom pixel dimensions also available |
 | Canvas navigation | Mouse wheel, trackpad pinch and two-finger zoom; drag blank space or hold Space while dragging to pan |
 | Image export | Lossless transparent PNG, SVG vector labels, adjustable JPG quality, and live output dimensions and file size |
@@ -56,9 +56,15 @@ The default canvas is A4 portrait. Switch to landscape or custom dimensions as n
 
 ![PIN group, resize handles and alignment controls, shown in Chinese](docs/images/pin-group-controls.png)
 
-Click any label to select its PIN group, then drag to move the group. Corner handles scale text, labels and spacing together. Top/bottom middle handles change only pin spacing. The left panel supports names, colors, start positions, group scale, bulk name editing and reversing the order.
+Click any label to select its PIN group, then drag to move the group. The left panel sets label layout and text direction independently: vertical layout follows the group's local Y axis, and horizontal layout follows its local X axis. Text can run horizontally or stack characters from top to bottom. The number of groups does not change their layout automatically. Use horizontal groups for the top and bottom and vertical groups for the left and right to arrange pins on all four sides.
 
-Set **Align to** to the board image, canvas or another PIN group, then choose Top, Center or Bottom. With **Snap to guides** enabled below the canvas, dragging close to an edge or center snaps the selection and displays a guide.
+Changing label layout, text direction or label rotation adjusts pin spacing to the new label size while preserving the clearance between labels where possible, preventing overlap in combinations such as vertical layout with stacked text. You can still enter a pitch or drag the spacing handles; scale long groups down or enlarge the canvas as needed.
+
+**Label rotation** rotates each capsule and its text together by **0° / 90° / 180° / 270°**. For example, horizontal label layout with horizontal text and 90° label rotation produces a row of upright capsules with the text turned as a whole. You can also rotate the whole group or mirror it about its local X/Y axis, including the letter shapes. At 0° group rotation, X-axis mirroring flips the group vertically and Y-axis mirroring flips it horizontally. Rotation and mirroring preserve the group center.
+
+Corner handles scale text, labels and spacing together. Middle handles change pin spacing along the transformed group layout axis and remain usable after rotation. The left panel supports names, colors, the bounding box's top-left start position, group scale, bulk name editing and reversing the order.
+
+Set **Align to** to the board image, canvas or another PIN group. Vertical groups offer Top, Center and Bottom; horizontal groups offer Left, Center and Right. With **Snap to guides** enabled below the canvas, dragging close to an edge or center snaps the selection and displays a guide.
 
 Display names, connector pin numbers and GPIO numbers are separate fields. The P4 example uses a front view with USB facing down, retaining original names such as IO9, IO6 and VO4. Verify the order against the actual engineering design; this general editor does not validate the electrical connections of a new board.
 
@@ -68,7 +74,7 @@ Display names, connector pin numbers and GPIO numbers are separate fields. The P
 
 Click **Export image** at the top right. The screenshot shows **JPG, 50% output size and 90% image quality**. The left side previews the export, while the information below the settings shows its actual pixel dimensions and file size. Wait for the preview to finish after changing settings, then choose **Download file** or **Save as…**.
 
-To continue editing later, use **Save project** to download JSON. It preserves the image, rotation, PIN group transformations and export settings.
+To continue editing later, use **Save project** to download JSON. It preserves the image, PIN group layout, text direction, label and group rotation, mirroring, and export settings. Saving, importing and switching languages preserve these settings; the Canvas preview and PNG, JPG and SVG exports use the same layout and transformation rules.
 
 ## Export quality and compression
 
@@ -84,7 +90,7 @@ The export dialog displays the actual file size. Selection boxes and snap guides
 
 - **Save project / Open project** includes the full image and settings for use across browsers and devices.
 - **Import pins_pic_gen JSON** imports label configuration while keeping the current image as the base. A generator configuration alone does not contain the board image.
-- **Generator files → Export config / Export base image** produces two files to place in the same directory for rendering with the original Python generator.
+- **Generator files → Export config / Export base image** produces two files to place in the same directory for rendering with the original Python generator. The `openpinmap` extension preserves the full layout for reimport into the web editor. The original `generate.py` ignores these web extensions and cannot reproduce horizontal layouts, stacked characters, label rotation, or group rotation and mirroring; export from the web editor for an exact appearance.
 
 See [Project format (Chinese)](docs/project-format.md) for schema, coordinate conventions, limits and Python compatibility details.
 
@@ -132,6 +138,7 @@ Unit tests cover P4/S31 pin order, v1/v2 project compatibility, transforms, PNG/
 app.js                  Editor interactions, Canvas rendering and file operations
 src/i18n.js             Chinese/English messages and explicit translation bindings
 src/model.js            Project and pin configuration validation
+src/geometry.js         Label/group rotation, reflection and bounds
 src/export.js           DPI metadata and SVG escaping
 style.css               Desktop and mobile layout
 examples/p4.json        Default P4 A4 example

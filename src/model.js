@@ -12,7 +12,8 @@ function validateGroups(groups){
   total+=g.pins.length;if(total>1000)throw localizedError('error.pinLimit','最多支持 1000 个引脚。');
   if(!Array.isArray(g.start)||g.start.length!==2||g.start.some(v=>typeof v!=='number'||!Number.isFinite(v)))throw localizedError('error.groupStart','分组 start 必须是两个数字坐标。');
   if(typeof g.gap!=='number'||!Number.isFinite(g.gap)||g.gap<1||g.gap>2000)throw localizedError('error.pinGap','针脚间距必须在 1–2000 px 之间。');
-  return {connector:String(g.connector||`H${i+1}`).slice(0,32),start:g.start.map(v=>clamp(v,-16000,16000)),gap:g.gap,scale:validNumber(g.scale,.1,5,1),pins:g.pins.map(p=>{
+  const layout=g.layout==='horizontal'?'horizontal':'vertical',textDirection=g.textDirection===undefined?(layout==='horizontal'?'vertical':'horizontal'):(g.textDirection==='vertical'?'vertical':'horizontal');
+  return {connector:String(g.connector||`H${i+1}`).slice(0,32),start:g.start.map(v=>clamp(v,-16000,16000)),gap:g.gap,scale:validNumber(g.scale,.1,5,1),layout,textDirection,labelRotation:[0,90,180,270].includes(g.labelRotation)?g.labelRotation:0,rotation:[0,90,180,270].includes(g.rotation)?g.rotation:0,mirrorX:g.mirrorX===true,mirrorY:g.mirrorY===true,pins:g.pins.map(p=>{
    if(!p||typeof p.name!=='string'||p.name.length>80)throw localizedError('error.pinName','引脚名称必须是 80 字符以内的文本。');
    if(typeof p.color!=='string'||!/^#[\da-f]{6}$/i.test(p.color))throw localizedError('error.color','颜色需使用 #RRGGBB 格式。');
    return {...p,name:p.name,color:p.color};
